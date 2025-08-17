@@ -25,8 +25,7 @@ setup(
         'console_scripts': [
             # 기존 inference 노드
             'inference_node = tiny_lidar_net.inference_node:main',
-            # 추가: odom_to_ackermann 노드
-            'odom_to_ackermann = tiny_lidar_net.odom_to_ackermann:main',
+            'ftg = tiny_lidar_net.ftg:main',
         ],
     },
     data_files=[
