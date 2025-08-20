@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>tiny_lidar_net</name>
+  <name>ofc</name>
   <version>0.0.0</version>
   <description>tiny_lidar_net custom ROS2 ver(sumin)</description>
   <maintainer email="misys@todo.todo">misys</maintainer>

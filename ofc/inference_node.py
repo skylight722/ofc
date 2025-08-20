@@ -30,22 +30,22 @@ SIDE_VIEW_DEG_MAX = 105
 # 속도 제어
 CURVE_SPEED_WEIGHT = 0.65
 V_MIN = 2.0
-V_MAX = 10.0
+V_MAX = 6.0
 
 # 조향각 제한
-STEER_ABS_MAX = 0.25
+STEER_ABS_MAX = 0.42
 # ======================================================================
 
 class TLNInference(Node):
     def __init__(self):
         super().__init__('tln_inference')
-        pkg_share = get_package_share_directory('tiny_lidar_net')
+        pkg_share = get_package_share_directory('ofc')
         self.model_path = str(Path(pkg_share) / 'models' / 'f2_f4_silverstone_7lap.keras')
         self.model = tf.keras.models.load_model(self.model_path, compile=False, safe_mode=False)
         self.get_logger().info("모델 로드 완료 - GPU backend 활성 ")
         self.steer_ema = 0.0
-        self.sub = self.create_subscription(LaserScan, '/sim/scan', self.scan_cb, 5)
-        self.pub = self.create_publisher(AckermannDriveStamped, '/sim/drive', 5)
+        self.sub = self.create_subscription(LaserScan, '/scan', self.scan_cb, 5)
+        self.pub = self.create_publisher(AckermannDriveStamped, '/drive', 5)
 
     def dnn_output(self, arr):
         if arr is None: return 0., 0.

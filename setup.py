@@ -2,7 +2,7 @@ from setuptools import setup
 import os
 from glob import glob
 
-package_name = 'tiny_lidar_net'
+package_name = 'ofc'
 
 setup(
     name=package_name,
@@ -18,14 +18,14 @@ setup(
     zip_safe=True,
     maintainer='misys',
     maintainer_email='misys@todo.todo',
-    description='TinyLidarNet inference for ROS 2',
+    description='ofc for ROS 2',
     license='Apache License 2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             # 기존 inference 노드
-            'inference_node = tiny_lidar_net.inference_node:main',
-            'ftg = tiny_lidar_net.ftg:main',
+            'inference_node = ofc.inference_node:main',
+            'ftg = ofc.ftg:main',
         ],
     },
     data_files=[
@@ -35,7 +35,7 @@ setup(
         ('share/' + package_name + '/launch',
          glob('launch/*.py')),
         ('share/' + package_name + '/models',
-         glob('tiny_lidar_net/models/*')),
+         glob('ofc/models/*')),
     ],
 )
 
