@@ -24,8 +24,10 @@ setup(
     entry_points={
         'console_scripts': [
             # 기존 inference 노드
-            'inference_node = ofc.inference_node:main',
+            'tln_inference = ofc.inference_node:main',
             'ftg = ofc.ftg:main',
+            #"drive_mux = ofc.drive_mux:main",
+            "enabled_guard  = ofc.enabled_guard:main",
         ],
     },
     data_files=[
