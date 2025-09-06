@@ -33,5 +33,34 @@ def generate_launch_description():
                 'prefer':  'tln_inference',
             }],
         ),
+
+        Node(
+            package='ofc',
+            executable='joy_controller',
+            name='ofc_joy_controller',
+            output='screen',
+            parameters=[{
+                'drive_topic': '/drive',
+                'deadman_button': 4,     # PS5 L1
+                'axis_steer': 3,         # PS5 오른스틱 X
+                'scale_steer': 0.34,
+                'deadzone': 0.05,
+                'fixed_speed': 3.0,      # 항상 3 m/s로 주행
+                'publish_hz': 50.0,
+                'drive_publish_enabled': False,  # 시작 시 OFF, enabled_guard가 관리
+            }],
+        ),
+
+        Node(
+            package='ofc',
+            executable='bag_recorder',
+            name='bag_recorder',
+            output='screen',
+            parameters=[{
+                'start_button': 1,
+                'stop_button': 3,
+            }],
+        ),
+
     ])
 

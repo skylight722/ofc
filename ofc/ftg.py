@@ -49,7 +49,7 @@ class FTG_Controller(Node):
                 ('drive_topic', '/drive'),
 
                 # ★ 추가: 퍼블리시 on/off 제어
-                ('enabled', False),
+                ('drive_publish_enabled', False),
             ],
         )
         self.mapping        = self.get_parameter('mapping').value
@@ -97,7 +97,7 @@ class FTG_Controller(Node):
             )
 
         # ★ 추가: enabled 파라미터 현재값과 변경 콜백
-        self.enabled = bool(self.get_parameter('enabled').value)
+        self.drive_publish_enabled = bool(self.get_parameter('drive_publish_enabled').value)
         self.add_on_set_parameters_callback(self._on_params)
 
     # ★ enabled 외 파라미터도 런타임 반영
@@ -105,10 +105,10 @@ class FTG_Controller(Node):
         ok = True
         for p in params:
             try:
-                if p.name == 'enabled':
+                if p.name == 'drive_publish_enabled':
                     if p.type_ == Parameter.Type.BOOL:
-                        self.enabled = bool(p.value)
-                        self.get_logger().info(f"[ftg] enabled = {self.enabled}")
+                        self.drive_publish_enabled = bool(p.value)
+                        self.get_logger().info(f"[ftg] drive_publish_enabled = {self.drive_publish_enabled}")
                     else:
                         self.get_logger().warn("enabled must be bool")
                         ok = False
@@ -353,7 +353,7 @@ class FTG_Controller(Node):
         out.drive.steering_angle = float(steer)
 
         # ★ 핵심: enabled일 때만 퍼블리시
-        if self.enabled:
+        if self.drive_publish_enabled:
             self.pub_drive.publish(out)
             print(f"Servo: {steer:.4f}, Speed: {speed:.3f} m/s | Took: {(time.time() - ts) * 1000:.2f} ms")
 

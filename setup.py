@@ -26,8 +26,10 @@ setup(
             # 기존 inference 노드
             'tln_inference = ofc.inference_node:main',
             'ftg = ofc.ftg:main',
+            'joy_controller = ofc.joy_controller:main',
             #"drive_mux = ofc.drive_mux:main",
             "enabled_guard  = ofc.enabled_guard:main",
+            "bag_recorder = ofc.bag_recorder:main",
         ],
     },
     data_files=[
