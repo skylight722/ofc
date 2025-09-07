@@ -8,18 +8,17 @@ import time
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
 from visualization_msgs.msg import Marker, MarkerArray
-from nav_msgs.msg import Odometry  # ★ 추가
+from nav_msgs.msg import Odometry  # odom 구독용
 
-# ★ 추가: enabled 파라미터를 위한 import
 from rclpy.parameter import Parameter
 from rcl_interfaces.msg import SetParametersResult
 
 
 class FTG_Controller(Node):
-    # Lidar processing params
+    # LiDAR 전처리
     PREPROCESS_CONV_SIZE = 7
 
-    # Steering params
+    # 조향 임계각
     STRAIGHTS_STEERING_ANGLE = np.pi / 18   # 10 deg
     MILD_CURVE_ANGLE        = np.pi / 6     # 30 deg
     ULTRASTRAIGHTS_ANGLE    = np.pi / 60    # 3 deg
@@ -27,7 +26,7 @@ class FTG_Controller(Node):
     def __init__(self):
         super().__init__('ftg_controller')
 
-        # ── 파라미터 ─────────────────────────────────────────────────────
+        # 파라미터
         self.declare_parameters(
             namespace='',
             parameters=[
@@ -39,16 +38,15 @@ class FTG_Controller(Node):
                 ('range_offset', 75),
                 ('track_width', 3.5),
 
-                # ★ 추가: 속도/토픽 관련
+                # 속도/토픽
                 ('use_odom_velocity', True),
                 ('odom_topic', '/car_state/odom'),
                 ('vel_ema_alpha', 0.3),
 
-                # ★ 추가: 토픽 통일(컨트롤러 매니저와 호환)
                 ('scan_topic', '/scan'),
                 ('drive_topic', '/drive'),
 
-                # ★ 추가: 퍼블리시 on/off 제어
+                # 퍼블리시 on/off
                 ('drive_publish_enabled', False),
             ],
         )
@@ -66,7 +64,7 @@ class FTG_Controller(Node):
         self.scan_topic        = str(self.get_parameter('scan_topic').value)
         self.drive_topic       = str(self.get_parameter('drive_topic').value)
 
-        # 속도 스케일
+        # 속도 티어(기본 스케일)
         scale = 0.6
         self.CORNERS_SPEED        = 0.3  * self.MAX_SPEED * scale
         self.MILD_CORNERS_SPEED   = 0.45 * self.MAX_SPEED * scale
@@ -78,29 +76,23 @@ class FTG_Controller(Node):
         self.scan     = None
         self.radians_per_elem = None
 
-        # ── 구독/퍼블리시 ───────────────────────────────────────────────
-        self.sub_scan = self.create_subscription(
-            LaserScan, self.scan_topic, self.scan_cb, 10
-        )
-        self.pub_drive = self.create_publisher(
-            AckermannDriveStamped, self.drive_topic, 10
-        )
+        # 구독/퍼블리시
+        self.sub_scan = self.create_subscription(LaserScan, self.scan_topic, self.scan_cb, 10)
+        self.pub_drive = self.create_publisher(AckermannDriveStamped, self.drive_topic, 10)
 
         self.scan_pub = self.create_publisher(MarkerArray, '/scan_proc/markers', 10)
         self.best_gap = self.create_publisher(MarkerArray, '/best_gap/markers', 10)
         self.best_pnt = self.create_publisher(Marker, '/best_points/marker', 10)
 
-        # ★ 오도메 속도 구독(선택)
+        # odom 기반 속도 구독(옵션)
         if self.use_odom_velocity:
-            self.sub_odom = self.create_subscription(
-                Odometry, self.odom_topic, self.odom_cb, 10
-            )
+            self.sub_odom = self.create_subscription(Odometry, self.odom_topic, self.odom_cb, 10)
 
-        # ★ 추가: enabled 파라미터 현재값과 변경 콜백
+        # enable 파라미터(퍼블리시 게이트)
         self.drive_publish_enabled = bool(self.get_parameter('drive_publish_enabled').value)
         self.add_on_set_parameters_callback(self._on_params)
 
-    # ★ enabled 외 파라미터도 런타임 반영
+    # 파라미터 런타임 반영
     def _on_params(self, params):
         ok = True
         for p in params:
@@ -127,7 +119,6 @@ class FTG_Controller(Node):
 
                 elif p.name == 'max_speed':
                     self.MAX_SPEED = float(p.value)
-                    # 속도 티어 의존값 재계산 (원래 로직 유지)
                     scale = 0.6
                     self.CORNERS_SPEED        = 0.3  * self.MAX_SPEED * scale
                     self.MILD_CORNERS_SPEED   = 0.45 * self.MAX_SPEED * scale
@@ -143,10 +134,8 @@ class FTG_Controller(Node):
                 elif p.name == 'use_odom_velocity':
                     new = bool(p.value)
                     if new and not self.use_odom_velocity:
-                        # 오도메 구독 시작
                         self.sub_odom = self.create_subscription(Odometry, self.odom_topic, self.odom_cb, 10)
                     elif not new and self.use_odom_velocity:
-                        # 오도메 구독 해제
                         if hasattr(self, 'sub_odom') and self.sub_odom:
                             try:
                                 self.destroy_subscription(self.sub_odom)
@@ -159,7 +148,6 @@ class FTG_Controller(Node):
                     new_topic = str(p.value)
                     self.odom_topic = new_topic
                     if self.use_odom_velocity:
-                        # 런타임 리바인드
                         if hasattr(self, 'sub_odom') and self.sub_odom:
                             try:
                                 self.destroy_subscription(self.sub_odom)
@@ -170,27 +158,25 @@ class FTG_Controller(Node):
                 elif p.name == 'vel_ema_alpha':
                     self.vel_ema_alpha = float(p.value)
 
-                # scan_topic / drive_topic은 보통 재시작 적용 (원하면 런타임 리바인드도 가능)
                 elif p.name == 'scan_topic':
-                    self.scan_topic = str(p.value)
+                    self.scan_topic = str(p.value)  # 재시작 적용 권장
                 elif p.name == 'drive_topic':
-                    self.drive_topic = str(p.value)
+                    self.drive_topic = str(p.value) # 재시작 적용 권장
 
             except Exception:
                 ok = False
 
         return SetParametersResult(successful=ok)
 
-    # ★ 오도메 콜백: 논리 그대로 — 속도 = twist.twist.linear.x
+    # odom 콜백: 선속도 x를 EMA로 저장
     def odom_cb(self, msg: Odometry):
         v_x = float(msg.twist.twist.linear.x)
         if not np.isfinite(v_x):
             return
-        # 부드럽게(EMA)
         a = self.vel_ema_alpha
         self.set_vel(a * v_x + (1.0 - a) * self.velocity)
 
-    # ─────────────────────────── FTG 로직 ────────────────────────────
+    # ---------------------- FTG 로직 ----------------------
     def _preprocess_lidar(self, ranges) -> np.ndarray:
         self.radians_per_elem = (1.5 * np.pi) / len(ranges)  # -135~+135°
         proc_ranges = np.array(ranges[self.range_offset:-self.range_offset])
@@ -200,7 +186,7 @@ class FTG_Controller(Node):
             'valid'
         )
         proc_ranges = np.clip(proc_ranges, 0, self.MAX_LIDAR_DIST)
-        return proc_ranges[::-1]  # 오른→왼 정렬
+        return proc_ranges[::-1]  # 오른쪽→왼쪽 정렬
 
     def _get_steer_angle(self, point_x, point_y) -> float:
         steering_angle = math.atan2(point_y, point_x)
@@ -300,7 +286,7 @@ class FTG_Controller(Node):
         return int(gap_left), int(gap_right)
 
     def _get_radius(self) -> float:
-        # ★ 오도메 속도 적용됨(EMA 반영 결과)
+        # odom 기반 속도로 코너링 반경 조정
         return float(min(5.0, self.track_width / 2.0 + 2.0 * (self.velocity / self.MAX_SPEED)))
 
     def set_vel(self, velocity) -> None:
@@ -337,12 +323,12 @@ class FTG_Controller(Node):
         arr.markers.append(m)
         self.best_gap.publish(arr)
 
-    # ── 콜백 ───────────────────────────────────────────────────────────
+    # 콜백
     def scan_cb(self, msg: LaserScan):
         ts = time.time()
         speed, steer = self.process_lidar(msg.ranges)
 
-        # 오도메 미사용 시, 퍼블리시한 속도를 내부 상태에 반영
+        # odom 미사용 시, 퍼블리시 속도를 내부 속도로 반영(EMA)
         if not self.use_odom_velocity:
             a = self.vel_ema_alpha
             self.set_vel(a * float(speed) + (1.0 - a) * self.velocity)
@@ -352,7 +338,7 @@ class FTG_Controller(Node):
         out.drive.speed = float(speed)
         out.drive.steering_angle = float(steer)
 
-        # ★ 핵심: enabled일 때만 퍼블리시
+        # enabled일 때만 퍼블리시
         if self.drive_publish_enabled:
             self.pub_drive.publish(out)
             print(f"Servo: {steer:.4f}, Speed: {speed:.3f} m/s | Took: {(time.time() - ts) * 1000:.2f} ms")

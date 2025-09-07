@@ -30,6 +30,7 @@ setup(
             #"drive_mux = ofc.drive_mux:main",
             "enabled_guard  = ofc.enabled_guard:main",
             "bag_recorder = ofc.bag_recorder:main",
+            "bag_recorder_sim = ofc.bag_recorder_sim:main",
         ],
     },
     data_files=[

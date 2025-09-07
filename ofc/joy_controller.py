@@ -10,15 +10,15 @@ class OfcJoyController(Node):
     def __init__(self):
         super().__init__('ofc_joy_controller')
 
-        # ---- Params (속도 고정: throttle 관련 전부 삭제) ----
+        # 파라미터 선언
         self.declare_parameters('', [
             ('drive_topic', '/drive'),
             ('deadman_button', 4),    # PS5 L1
-            ('axis_steer', 3),        # PS5 오른쪽 스틱 X
-            ('scale_steer', 0.34),    # rad
-            ('deadzone', 0.05),       # 스티어 데드존
-            ('fixed_speed', 3.0),     # ★ 항상 이 속도로 주행 (m/s)
-            ('publish_hz', 50.0),
+            ('axis_steer', 3),        # PS5 오른쪽 스틱 X축
+            ('scale_steer', 0.34),    # 조향 각도 최대값 (rad)
+            ('deadzone', 0.05),       # 조향 데드존
+            ('fixed_speed', 3.0),     # 고정 속도 (m/s)
+            ('publish_hz', 50.0),     # 발행 주기 (Hz)
             ('drive_publish_enabled', False),
         ])
 
@@ -31,14 +31,14 @@ class OfcJoyController(Node):
         self.fixed_speed     = float(p('fixed_speed').value)
         self.drive_publish_enabled = bool(p('drive_publish_enabled').value)
 
-        # ---- IO ----
+        # 구독 및 퍼블리셔
         self.sub_joy   = self.create_subscription(Joy, '/joy', self._on_joy, 50)
         self.pub_drive = self.create_publisher(AckermannDriveStamped, self.drive_topic, 10)
 
-        # ---- State ----
+        # 내부 상태
         self._last_joy = None
         self._last_deadman = 0
-        self.deadman_active = False   # ★ 실제 버튼 눌림 여부
+        self.deadman_active = False
         self._last_pub_t = 0.0
         self._pub_dt = 1.0 / float(self.get_parameter('publish_hz').value)
 
@@ -67,16 +67,15 @@ class OfcJoyController(Node):
         self._last_joy = msg
         deadman = self._btn(msg, self.deadman_button)
 
-        # ★ 데드맨 상태 갱신
+        # 버튼을 놓을 때 0,0 명령을 발행하여 안전 정지
         if self._last_deadman == 1 and deadman == 0 and self.drive_publish_enabled:
-            # 버튼 놓는 순간 0,0 발행 (안전 정지)
             self._publish(0.0, 0.0)
 
         self.deadman_active = (deadman == 1)
         self._last_deadman = deadman
 
     def _tick(self):
-        # ★ 외부 파라미터 허용 + 버튼 눌림 동시에 만족해야 발행
+        # 파라미터가 허용된 상태이고 버튼이 눌렸을 때만 발행
         if not (self.drive_publish_enabled and self.deadman_active):
             return
         if self._last_joy is None:
@@ -89,13 +88,14 @@ class OfcJoyController(Node):
         steer = self._map_steer(self._last_joy)
         self._publish(self.fixed_speed, steer)
 
-    # ---- Helpers ----
+    # 조향 입력 처리
     def _map_steer(self, j: Joy) -> float:
         raw = self._axis(j, self.axis_steer)
         val = 0.0 if abs(raw) < self.deadzone else raw
         val = max(-1.0, min(1.0, val)) * self.scale_steer
         return float(val)
 
+    # 메시지 발행
     def _publish(self, speed: float, steer: float):
         msg = AckermannDriveStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
