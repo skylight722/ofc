@@ -42,10 +42,10 @@ def generate_launch_description():
             parameters=[{
                 'drive_topic': '/drive',
                 'deadman_button': 4,     # PS5 L1
-                'axis_steer': 3,         # PS5 오른스틱 X
+                'axis_steer': 2,         # PS5 오른스틱 X
                 'scale_steer': 0.34,
                 'deadzone': 0.05,
-                'fixed_speed': 3.0,      # 항상 3 m/s로 주행
+                'fixed_speed': 2.5,      
                 'publish_hz': 50.0,
                 'drive_publish_enabled': False,  # 시작 시 OFF, enabled_guard가 관리
             }],
@@ -57,8 +57,8 @@ def generate_launch_description():
             name='bag_recorder_sim',
             output='screen',
             parameters=[{
-                'start_button': 1,
-                'stop_button': 3,
+                'start_button': 2,
+                'stop_button': 0,
             }],
         ),
 

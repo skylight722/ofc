@@ -4,6 +4,7 @@ import rclpy
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterEvent, Parameter, ParameterValue, ParameterType
 from rcl_interfaces.srv import SetParameters, GetParameters
+from rcl_interfaces.msg import SetParametersResult  # ★ added
 from sensor_msgs.msg import Joy
 from typing import List, Optional
 
@@ -43,7 +44,7 @@ class EnabledGuard(Node):
         ).get_parameter_value().double_value
 
         self.right_x_axis: int = self.declare_parameter(
-            'right_x_axis', 3    # 일반적으로 우스틱 X축
+            'right_x_axis', 2
         ).get_parameter_value().integer_value
 
         # 상태
@@ -61,6 +62,8 @@ class EnabledGuard(Node):
             f'joy_node={self.joy_node}, right_x_axis={self.right_x_axis}, '
             f'deadzone={self.axis_deadzone}'
         )
+
+        self.add_on_set_parameters_callback(self._on_params)
 
         # 시작 시 1회 정합
         self.create_timer(1.0, self._startup_check_once)
@@ -121,7 +124,7 @@ class EnabledGuard(Node):
             except (ValueError, TypeError):
                 axis_active = False
         else:
-            self.get_logger().warn(f'[enabled_guard] right_x_axis index {idx} out of range (len={len(j.axes)})')
+            self.get_logger().warn(f'[enabled_guard] right_x_axis index {idx} out of range (len={len(j.axes}) )')
             axis_active = False
 
         # 수동 진입: deadman + 우스틱 X축
@@ -137,9 +140,18 @@ class EnabledGuard(Node):
         if self.manual_active and return_rising:
             self.manual_active = False
             self._set_enabled(self.joy_node, False)
-            target = self.last_active if self.last_active in self.targets else self.prefer
+            target = self.prefer  # ★ 항상 prefer로 복귀 (최소 변경)
             self._set_enabled(target, True)
             self.get_logger().info(f'[enabled_guard] return -> joy_node OFF, {target}=True')
+
+    # ★ prefer 런타임 변경 반영 (최소 추가)
+    def _on_params(self, params):
+        for p in params:
+            if p.name == 'prefer':
+                # 어떤 값이든 반영(최소 변경). 보통 targets 중 하나를 권장.
+                self.prefer = str(p.value)
+                self.get_logger().info(f"[enabled_guard] prefer updated -> {self.prefer}")
+        return SetParametersResult(successful=True)
 
     # 유틸: 파라미터 설정
     def _set_enabled(self, node_name: str, val: bool):

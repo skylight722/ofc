@@ -8,16 +8,13 @@ class BagRecorder(Node):
     def __init__(self):
         super().__init__('bag_recorder_sim')
 
-        # 버튼 인덱�
-        self.start_button = self.declare_parameter('start_button', 1).value
-        self.stop_button  = self.declare_parameter('stop_button', 3).value
+        self.start_button = self.declare_parameter('start_button', 2).value
+        self.stop_button  = self.declare_parameter('stop_button', 0).value
 
-        # 저장 경로
         self.proc = None
         self.save_dir = os.path.expanduser('~/forza_ws/race_stack/rosbag')
         os.makedirs(self.save_dir, exist_ok=True)
 
-        # 입력 구독
         self.create_subscription(Joy, '/joy', self._on_joy, 10)
         self.get_logger().info('[bag_recorder] ready. Press start/stop buttons to control recording.')
 
@@ -30,7 +27,7 @@ class BagRecorder(Node):
             out_path = os.path.join(self.save_dir, f"offline_{ts}")
             cmd = ["ros2", "bag", "record", "-o", out_path, "/scan", "/tf", "/tf_static"]
             self.proc = subprocess.Popen(cmd, preexec_fn=os.setsid)
-            self.get_logger().info(f"[bag_recorder] START recording → {out_path}")
+            self.get_logger().info(f"[bag_recorder] START recording {out_path}")
 
         elif stop_pressed and self.proc is not None:
             os.killpg(os.getpgid(self.proc.pid), signal.SIGINT)

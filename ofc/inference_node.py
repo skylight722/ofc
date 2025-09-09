@@ -57,24 +57,30 @@ class TLNInference(Node):
 
             # 매핑 모드 스위치
             ('mapping', False),
+
+            # ★ 라이다 값 클램핑 상한 (기본 10.0 m)
+            ('clamp_range_max_m', 10.0),
         ])
 
         # 값 로드
-        self.drive_publish_enabled       = bool(self.get_parameter("drive_publish_enabled").value)
-        self.scan_topic                  = str(self.get_parameter('scan_topic').value)
-        self.drive_topic                 = str(self.get_parameter('drive_topic').value)
-        self.down_sample                 = int(self.get_parameter('down_sample').value)
-        self.ema_alpha                   = float(self.get_parameter('ema_alpha').value)
-        self.steering_deadzone_rad       = float(self.get_parameter('steering_deadzone_rad').value)
+        self.drive_publish_enabled = bool(self.get_parameter("drive_publish_enabled").value)
+        self.scan_topic            = str(self.get_parameter('scan_topic').value)
+        self.drive_topic           = str(self.get_parameter('drive_topic').value)
+        self.down_sample           = int(self.get_parameter('down_sample').value)
+        self.ema_alpha             = float(self.get_parameter('ema_alpha').value)
+        self.steering_deadzone_rad = float(self.get_parameter('steering_deadzone_rad').value)
 
-        self.reverse_direction           = bool(self.get_parameter('reverse_direction').value)
+        self.reverse_direction     = bool(self.get_parameter('reverse_direction').value)
 
-        self.curve_speed_weight          = float(self.get_parameter('curve_speed_weight').value)
-        self.v_min                       = float(self.get_parameter('v_min').value)
-        self.v_max                       = float(self.get_parameter('v_max').value)
-        self.steer_abs_max               = float(self.get_parameter('steer_abs_max').value)
+        self.curve_speed_weight    = float(self.get_parameter('curve_speed_weight').value)
+        self.v_min                 = float(self.get_parameter('v_min').value)
+        self.v_max                 = float(self.get_parameter('v_max').value)
+        self.steer_abs_max         = float(self.get_parameter('steer_abs_max').value)
 
-        self.mapping                     = bool(self.get_parameter('mapping').value)
+        self.mapping               = bool(self.get_parameter('mapping').value)
+
+        # ★ 클램핑 상한 파라미터
+        self.clamp_range_max_m     = float(self.get_parameter('clamp_range_max_m').value)
 
         # 변경 콜백 등록
         self.add_on_set_parameters_callback(self._on_params)
@@ -102,6 +108,13 @@ class TLNInference(Node):
         ts = time.time()
         rng = np.asarray(msg.ranges, dtype=np.float64)
         rng = self.make_hokuyo_scan(rng)
+
+        # ★ 라이다 클램핑: NaN/±Inf 처리 후 [0, clamp_range_max_m]로 제한
+        cap = float(self.clamp_range_max_m)
+        if cap <= 0.0:
+            cap = 10.0  # 방어적 기본값
+        rng = np.nan_to_num(rng, nan=cap, posinf=cap, neginf=0.0)
+        rng = np.clip(rng, 0.0, cap)
 
         # 역방향이면 입력 LiDAR 좌우 반전
         if self.reverse_direction:
@@ -171,6 +184,9 @@ class TLNInference(Node):
             elif p.name == 'mapping':
                 self.mapping = bool(p.value)
                 self.get_logger().info(f"[tln_inference] mapping = {self.mapping}")
+            elif p.name == 'clamp_range_max_m':
+                self.clamp_range_max_m = float(p.value)
+                self.get_logger().info(f"[tln_inference] clamp_range_max_m = {self.clamp_range_max_m:.2f} m")
         return SetParametersResult(successful=True)
 
 def main(args=None):

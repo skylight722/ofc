@@ -41,9 +41,10 @@ def generate_launch_description():
         name='urg_node',
         output='screen',
         parameters=[LaunchConfiguration('sensors_config')]
+         env={'LD_LIBRARY_PATH': f'{urg2_lib}:' + os.environ.get('LD_LIBRARY_PATH', '')}
     )
 
-    # ====== 3) VESC 체인 (구동/오도메트리) ======
+    # ====== 3) VESC 체인  ======
     vesc_driver_node = Node(
         package='vesc_driver',
         executable='vesc_driver_node',
@@ -51,8 +52,8 @@ def generate_launch_description():
         output='screen',
         parameters=[LaunchConfiguration('vesc_config')]
     )
-    # VESC가 구독하는 입력은 하드코딩 "ackermann_cmd" 입니다 (소스 확인 완료).
-    # 컨트롤러들이 곧장 "/ackermann_cmd"로 퍼블리시하도록 구성합니다.
+    
+    # 컨트롤러들이 곧장 "/ackermann_cmd"로 퍼블리시하도록 구성
     ackermann_to_vesc_node = Node(
         package='vesc_ackermann',
         executable='ackermann_to_vesc_node',
@@ -86,7 +87,7 @@ def generate_launch_description():
         output='screen',
         arguments=['0.27', '0.0', '0.11', '0.0', '0.0', '0.0', 'base_link', 'laser']
     )
-    # base_link -> imu (IMU 마운트 위치/자세) — 실제 장착값으로 검증 권장
+    # base_link -> imu (IMU 마운트 위치/자세) 
     static_tf_baselink_imu = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
@@ -94,11 +95,10 @@ def generate_launch_description():
         output='screen',
         arguments=['0.07', '0.0', '0.05', '0.0', '0.0', '0.7071068', '0.7071068', 'base_link', 'imu']
     )
-    # 실차에서는 map->odom 정적 TF 금지(로컬라이저/SLAM이 결정)
-    # static_map_to_odom = Node(... )  # 제거
+
 
     # ====== 5) 컨트롤러 (모두 /ackermann_cmd 로 직접 퍼블리시) ======
-    # enabled_guard가 drive_publish_enabled 를 관리하여 "항상 하나만" 발행되도록 보장합니다.
+  
     tln_node = Node(
         package='ofc',
         executable='tln_inference',     # setup.py console_scripts
@@ -132,10 +132,10 @@ def generate_launch_description():
         parameters=[{
             'drive_topic': '/ackermann_cmd',
             'deadman_button': 4,     # PS5 L1
-            'axis_steer': 3,         # PS5 오른스틱 X
+            'axis_steer': 2,         # PS5 오른스틱 X
             'scale_steer': 0.34,
             'deadzone': 0.05,
-            'fixed_speed': 3.0,
+            'fixed_speed': 2.5,
             'publish_hz': 50.0,
             'drive_publish_enabled': False,  # 시작 시 OFF, enabled_guard가 관리
         }]
@@ -148,8 +148,8 @@ def generate_launch_description():
         name='bag_recorder',
         output='screen',
         parameters=[{
-            'start_button': 1,
-            'stop_button': 3,
+            'start_button': 2,
+            'stop_button': 0,
         }]
     )
 

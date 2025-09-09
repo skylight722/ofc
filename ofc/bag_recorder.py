@@ -9,28 +9,24 @@ class BagRecorder(Node):
     def __init__(self):
         super().__init__('bag_recorder')
 
-        # 조이스틱 버�
-        self.start_button = self.declare_parameter('start_button', 1).value
-        self.stop_button  = self.declare_parameter('stop_button', 3).value
+        # Button parameters
+        self.start_button = self.declare_parameter('start_button', 2).value
+        self.stop_button  = self.declare_parameter('stop_button', 0).value
 
-        # 레코딩 옵션
-        # record_all=True: 모든 토픽(-a), False: include_topics 만 기록
-        self.record_all        = self.declare_parameter('record_all', True).value
-        self.include_topics    = self.declare_parameter('include_topics', []).value  # 예: ['/scan','/tf','/tf_static']
-        self.exclude_regex     = self.declare_parameter('exclude_regex', '').value   # 예: '.*image_raw.*|/parameter_events'
-        self.storage_id        = self.declare_parameter('storage_id', 'sqlite3').value  # 'sqlite3' 또는 'mcap'
-        self.compression_mode  = self.declare_parameter('compression_mode', '').value   # ''|'file'|'message'
-        self.compression_format= self.declare_parameter('compression_format', '').value # ''|'zstd'|'lz4'
-        self.max_cache_size    = self.declare_parameter('max_cache_size', 0).value      # 0=기본, bytes
+        # Recording parameters
+        self.record_all     = self.declare_parameter('record_all', True).value
+        self.include_topics = self.declare_parameter('include_topics', []).value
+        self.exclude_regex  = self.declare_parameter('exclude_regex', '').value
+        self.storage_id     = self.declare_parameter('storage_id', 'sqlite3').value
 
-        # 저장 경로
+        # Save directory
         self.save_dir = os.path.expanduser('~/forza_ws/race_stack/rosbag')
         os.makedirs(self.save_dir, exist_ok=True)
 
-        # 내부 상태
+        # Current recording process
         self.proc = None
 
-        # 입력 구독
+        # Subscribe joystick
         self.create_subscription(Joy, '/joy', self._on_joy, 10)
         self.get_logger().info('[bag_recorder] ready. Press start/stop buttons to control recording.')
 
@@ -43,19 +39,11 @@ class BagRecorder(Node):
         if self.record_all:
             cmd += ['-a']
             if self.exclude_regex:
-                cmd += ['-x', self.exclude_regex]  # 제외 정규식
+                cmd += ['-x', self.exclude_regex]  # exclude by regex
         else:
-            # 비워두면 기본 3개로 안전 가드
+            # Default minimal topics
             topics = self.include_topics or ['/scan', '/tf', '/tf_static']
             cmd += topics
-
-        # 압축 및 버퍼 설정
-        if self.compression_mode:
-            cmd += ['--compression-mode', self.compression_mode]
-        if self.compression_format:
-            cmd += ['--compression-format', self.compression_format]
-        if isinstance(self.max_cache_size, int) and self.max_cache_size > 0:
-            cmd += ['--max-cache-size', str(self.max_cache_size)]
 
         return cmd, out_path
 
@@ -66,7 +54,7 @@ class BagRecorder(Node):
         if start_pressed and self.proc is None:
             cmd, out_path = self._build_cmd()
             self.proc = subprocess.Popen(cmd, preexec_fn=os.setsid)
-            self.get_logger().info(f"[bag_recorder] START recording → {out_path}")
+            self.get_logger().info(f"[bag_recorder] START recording -> {out_path}")
             self.get_logger().info(f"[bag_recorder] CMD: {' '.join(cmd)}")
 
         elif stop_pressed and self.proc is not None:
@@ -87,4 +75,6 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+
 
