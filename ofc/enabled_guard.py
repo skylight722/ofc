@@ -124,7 +124,7 @@ class EnabledGuard(Node):
             except (ValueError, TypeError):
                 axis_active = False
         else:
-            self.get_logger().warn(f'[enabled_guard] right_x_axis index {idx} out of range (len={len(j.axes}) )')
+            self.get_logger().warn(f'[enabled_guard] right_x_axis index {idx} out of range')
             axis_active = False
 
         # 수동 진입: deadman + 우스틱 X축
@@ -140,11 +140,11 @@ class EnabledGuard(Node):
         if self.manual_active and return_rising:
             self.manual_active = False
             self._set_enabled(self.joy_node, False)
-            target = self.prefer  # ★ 항상 prefer로 복귀 (최소 변경)
+            target = self.prefer  # 항상 prefer로 복귀
             self._set_enabled(target, True)
             self.get_logger().info(f'[enabled_guard] return -> joy_node OFF, {target}=True')
 
-    # ★ prefer 런타임 변경 반영 (최소 추가)
+    # prefer 런타임 변경 반영 
     def _on_params(self, params):
         for p in params:
             if p.name == 'prefer':

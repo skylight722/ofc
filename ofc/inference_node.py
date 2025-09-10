@@ -58,7 +58,7 @@ class TLNInference(Node):
             # 매핑 모드 스위치
             ('mapping', False),
 
-            # ★ 라이다 값 클램핑 상한 (기본 10.0 m)
+            # 라이다 값 클램핑 상한 (기본 10.0 m)
             ('clamp_range_max_m', 10.0),
         ])
 
@@ -79,7 +79,7 @@ class TLNInference(Node):
 
         self.mapping               = bool(self.get_parameter('mapping').value)
 
-        # ★ 클램핑 상한 파라미터
+        # 클램핑 상한 파라미터
         self.clamp_range_max_m     = float(self.get_parameter('clamp_range_max_m').value)
 
         # 변경 콜백 등록
@@ -109,7 +109,7 @@ class TLNInference(Node):
         rng = np.asarray(msg.ranges, dtype=np.float64)
         rng = self.make_hokuyo_scan(rng)
 
-        # ★ 라이다 클램핑: NaN/±Inf 처리 후 [0, clamp_range_max_m]로 제한
+        # 라이다 클램핑: NaN/±Inf 처리 후 [0, clamp_range_max_m]로 제한
         cap = float(self.clamp_range_max_m)
         if cap <= 0.0:
             cap = 10.0  # 방어적 기본값
