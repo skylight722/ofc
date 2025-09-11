@@ -24,7 +24,7 @@ class EnabledGuard(Node):
         ).get_parameter_value().string_array_value)
 
         self.prefer: str = self.declare_parameter(
-            'prefer', 'ofc_joy_controller'
+            'prefer', 'tln_inference'
         ).get_parameter_value().string_value
 
         self.joy_node: str = self.declare_parameter(
@@ -140,15 +140,14 @@ class EnabledGuard(Node):
         if self.manual_active and return_rising:
             self.manual_active = False
             self._set_enabled(self.joy_node, False)
-            target = self.prefer  # 항상 prefer로 복귀
+            target = self.prefer
             self._set_enabled(target, True)
             self.get_logger().info(f'[enabled_guard] return -> joy_node OFF, {target}=True')
 
-    # prefer 런타임 변경 반영 
     def _on_params(self, params):
         for p in params:
             if p.name == 'prefer':
-                # 어떤 값이든 반영(최소 변경). 보통 targets 중 하나를 권장.
+                
                 self.prefer = str(p.value)
                 self.get_logger().info(f"[enabled_guard] prefer updated -> {self.prefer}")
         return SetParametersResult(successful=True)
@@ -193,4 +192,5 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
 
