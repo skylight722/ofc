@@ -132,6 +132,15 @@ def generate_launch_description():
             'fixed_speed': 2.5,
             'publish_hz': 50.0,
             'drive_publish_enabled': False,
+
+            'tln_node_name': '/tln_inference',
+            'vmax_inc_button': 3,
+            'vmax_dec_button': 1,
+            'vmin_inc_button': 9,
+            'vmin_dec_button': 8,
+            'tln_step': 0.5,
+            'vmin_floor': 0.0,
+            'vmax_ceil': 15.0
         }]
     )
 
