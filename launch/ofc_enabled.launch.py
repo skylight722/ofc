@@ -129,7 +129,7 @@ def generate_launch_description():
             'axis_steer': 2,
             'scale_steer': 0.34,
             'deadzone': 0.05,
-            'fixed_speed': 2.5,
+            'fixed_speed': 1.5,
             'publish_hz': 50.0,
             'drive_publish_enabled': False,
 

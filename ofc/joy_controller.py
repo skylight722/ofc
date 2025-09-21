@@ -28,7 +28,7 @@ class OfcJoyController(Node):
             ('axis_steer', 2),         # PS5 오른쪽 스틱 X축
             ('scale_steer', 0.34),     # 조향 각도 최대값 (rad)
             ('deadzone', 0.05),        # 조향 데드존
-            ('fixed_speed', 2.5),      # 고정 속도 (m/s)
+            ('fixed_speed', 1.5),      # 고정 속도 (m/s)
             ('publish_hz', 50.0),      # 발행 주기 (Hz)
             ('drive_publish_enabled', False),
 
